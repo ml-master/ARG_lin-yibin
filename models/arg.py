@@ -123,8 +123,8 @@ class ARGModel(torch.nn.Module):
 
         attn_content, _ = self.content_attention(content_feature_1, mask=content_masks)
 
-        reweight_score_ftr_2 = self.score_mapper_ftr_2(mutual_FTR_content_2)
-        reweight_score_ftr_3 = self.score_mapper_ftr_3(mutual_FTR_content_3)
+        reweight_score_ftr_2 = self.score_mapper_ftr_2(mutual_FTR_content_2)#useful weight
+        reweight_score_ftr_3 = self.score_mapper_ftr_3(mutual_FTR_content_3)#useful weight
 
         reweight_expert_2 = reweight_score_ftr_2 * expert_2
         reweight_expert_3 = reweight_score_ftr_3 * expert_3
@@ -218,7 +218,7 @@ class Trainer():
             language=self.config['language']
         )
 
-        test_path = get_monthly_path(self.config['data_type'], self.config['root_path'], self.config['month'], 'test.json')
+        test_path = get_monthly_path(self.config['data_type'], self.config['root_path'], self.config['month'], 'new_dataset.json')
         test_future_loader = get_dataloader(
             test_path, 
             self.config['max_len'], 

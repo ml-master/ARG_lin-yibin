@@ -5,7 +5,7 @@ from utils.utils import get_tensorboard_writer
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_name', type=str, default='ARG')
-parser.add_argument('--epoch', type=int, default=50)
+parser.add_argument('--epoch', type=int, default=100)
 parser.add_argument('--max_len', type=int, default=170)
 parser.add_argument('--early_stop', type=int, default=5)
 parser.add_argument('--language', type=str, default='en')
@@ -22,10 +22,11 @@ parser.add_argument('--param_log_dir', type=str, default = './logs/param')
 
 # extra parameter
 parser.add_argument('--tensorboard_dir', type=str, default='./logs/tensorlog')
-parser.add_argument('--bert_path', type=str, default = '/path/to/bert-base-uncased')
+parser.add_argument('--bert_path', type=str, default = 'hfl/chinese-roberta-wwm-ext')
 parser.add_argument('--data_type', type=str, default = 'rationale')
 parser.add_argument('--data_name', type=str)
 parser.add_argument('--eval_mode', type=bool, default = False)
+parser.add_argument('--eval_model_path', type=str, default='/home/dseg/BrandonLin/ARG/ARG/param_model/ARG_en-arg/1/parameter_bert.pkl')
 
 # model structure control
 parser.add_argument('--expert_interaction_method', type=str, default = 'cross_attention')
@@ -88,6 +89,7 @@ config = {
         'data_type': args.data_type,
         'data_name': args.data_name,
         'eval_mode': args.eval_mode,
+        'eval_model_path': args.eval_model_path,
 
         'teacher_path': args.teacher_path,
         'month': 1

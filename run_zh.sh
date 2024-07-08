@@ -5,8 +5,8 @@ python main.py \
     --lr 2e-5 \
     --model_name ARG \
     --language ch \
-    --root_path /path/to/zh-data \
-    --bert_path /path/to/chinese-bert-wwm-ext \
+    --root_path data/zh/ \
+    --bert_path hfl/chinese-roberta-wwm-ext \
     --data_name zh-arg \
     --data_type rationale \
     --rationale_usefulness_evaluator_weight 2.2 \

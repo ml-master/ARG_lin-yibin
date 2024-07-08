@@ -6,6 +6,7 @@ from torch.autograd import Function
 import math
 from timm.models.vision_transformer import Block
 
+
 class ReverseLayerF(Function):
     @staticmethod
     def forward(ctx, input_, alpha):
@@ -17,6 +18,7 @@ class ReverseLayerF(Function):
         output = grad_output.neg() * ctx.alpha
         return output, None
 
+
 class MLP(torch.nn.Module):
 
     def __init__(self, input_dim, embed_dims, dropout, output_layer=True):
@@ -24,7 +26,7 @@ class MLP(torch.nn.Module):
         layers = list()
         for embed_dim in embed_dims:
             layers.append(torch.nn.Linear(input_dim, embed_dim))
-            #layers.append(torch.nn.BatchNorm1d(embed_dim))
+            # layers.append(torch.nn.BatchNorm1d(embed_dim))
             layers.append(torch.nn.ReLU())
             layers.append(torch.nn.Dropout(p=dropout))
             input_dim = embed_dim
@@ -37,6 +39,7 @@ class MLP(torch.nn.Module):
         :param x: Float tensor of size ``(batch_size, embed_dim)``
         """
         return self.mlp(x)
+
 
 class cnn_extractor(nn.Module):
     def __init__(self, feature_kernel, input_size):
@@ -54,10 +57,12 @@ class cnn_extractor(nn.Module):
         feature = feature.view([-1, feature.shape[1]])
         return feature
 
+
 class MaskAttention(torch.nn.Module):
     """
     Compute attention layer
     """
+
     def __init__(self, input_shape):
         super(MaskAttention, self).__init__()
         self.attention_layer = torch.nn.Linear(input_shape, 1)
@@ -70,6 +75,7 @@ class MaskAttention(torch.nn.Module):
         outputs = torch.matmul(scores, inputs).squeeze(1)
 
         return outputs, scores
+
 
 class Attention(torch.nn.Module):
     """
@@ -89,6 +95,7 @@ class Attention(torch.nn.Module):
             p_attn = dropout(p_attn)
 
         return torch.matmul(p_attn, value), p_attn
+
 
 class MultiHeadedAttention(torch.nn.Module):
     """
@@ -126,19 +133,22 @@ class MultiHeadedAttention(torch.nn.Module):
 
         return self.output_linear(x), attn
 
+
 class SelfAttentionFeatureExtract(torch.nn.Module):
     def __init__(self, multi_head_num, input_size, output_size=None):
         super(SelfAttentionFeatureExtract, self).__init__()
         self.attention = MultiHeadedAttention(multi_head_num, input_size)
+
     def forward(self, inputs, query, mask=None):
         mask = mask.view(mask.size(0), 1, 1, mask.size(-1))
 
         feature, attn = self.attention(query=query,
-                                 value=inputs,
-                                 key=inputs,
-                                 mask=mask
-                                 )
+                                       value=inputs,
+                                       key=inputs,
+                                       mask=mask
+                                       )
         return feature, attn
+
 
 def masked_softmax(scores, mask):
     """Apply source length masking then softmax.
@@ -146,20 +156,21 @@ def masked_softmax(scores, mask):
 
     # Fill pad positions with -inf
     scores = scores.masked_fill(mask == 0, -np.inf)
- 
+
     # Cast to float and then back again to prevent loss explosion under fp16.
     return F.softmax(scores.float(), dim=-1).type_as(scores)
- 
+
+
 class ParallelCoAttentionNetwork(nn.Module):
- 
+
     def __init__(self, hidden_dim, co_attention_dim, mask_in=False):
         super(ParallelCoAttentionNetwork, self).__init__()
- 
+
         self.hidden_dim = hidden_dim
         self.co_attention_dim = co_attention_dim
         self.mask_in = mask_in
         # self.src_length_masking = src_length_masking
- 
+
         # [hid_dim, hid_dim]
         self.W_b = nn.Parameter(torch.randn(self.hidden_dim, self.hidden_dim))
         # [co_dim, hid_dim]
@@ -170,7 +181,7 @@ class ParallelCoAttentionNetwork(nn.Module):
         self.w_hv = nn.Parameter(torch.randn(self.co_attention_dim, 1))
         # [co_dim, 1]
         self.w_hq = nn.Parameter(torch.randn(self.co_attention_dim, 1))
- 
+
     def forward(self, V, Q, V_mask=None, Q_mask=None):
         """ ori_setting
         :param V: batch_size * hidden_dim * region_num, eg B x 512 x 196
@@ -193,7 +204,7 @@ class ParallelCoAttentionNetwork(nn.Module):
         # (batch_size, co_attention_dim, seq_len)
         H_q = nn.Tanh()(
             torch.matmul(self.W_q, Q.permute(0, 2, 1)) + torch.matmul(torch.matmul(self.W_v, V), C.permute(0, 2, 1)))
- 
+
         # (batch_size, 1, region_num)
         a_v = F.softmax(torch.matmul(torch.t(self.w_hv), H_v), dim=2)
         # (batch_size, 1, seq_len)
@@ -204,22 +215,22 @@ class ParallelCoAttentionNetwork(nn.Module):
             masked_a_v = masked_softmax(
                 a_v.squeeze(1), V_mask
             ).unsqueeze(1)
-    
+
             # # (batch_size, 1, seq_len)
             masked_a_q = masked_softmax(
                 a_q.squeeze(1), Q_mask
             ).unsqueeze(1)
- 
+
             # (batch_size, hidden_dim)
             v = torch.squeeze(torch.matmul(masked_a_v, V.permute(0, 2, 1)))
             # (batch_size, hidden_dim)
             q = torch.squeeze(torch.matmul(masked_a_q, Q))
-    
+
             return masked_a_v, masked_a_q, v, q
         else:
             # (batch_size, hidden_dim)
             v = torch.squeeze(torch.matmul(a_v, V.permute(0, 2, 1)))
             # (batch_size, hidden_dim)
             q = torch.squeeze(torch.matmul(a_q, Q))
-    
+
             return a_v, a_q, v, q

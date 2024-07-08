@@ -87,8 +87,10 @@ class Run():
                     trainer = ARGDTrainer(self.config, self.writer)
                 else:
                     raise ValueError('model_name is not supported')
-
-                metrics, model_path, train_epochs = trainer.train(logger)
+                if not self.config['eval_mode']:
+                    metrics, model_path, train_epochs = trainer.train(logger)
+                else:
+                    metrics, model_path, train_epochs = trainer.predict(logger)
                 json_result.append({
                     'lr': self.config['lr'],
                     'metric': metrics,

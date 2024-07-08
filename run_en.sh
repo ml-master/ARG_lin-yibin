@@ -5,11 +5,11 @@ python main.py \
     --lr 5e-5 \
     --model_name ARG \
     --language en \
-    --root_path /path/to/en-data \
-    --bert_path /path/to/bert-base-uncased \
-    --data_name en-arg \
+    --root_path data/en \
+    --bert_path bert-base-uncased \
+    --data_name new-test-arg \
     --data_type rationale \
-    --rationale_usefulness_evaluator_weight 1.5 \
+    --rationale_usefulness_evaluator_weight 1.0 \
     --llm_judgment_predictor_weight 1.0
 
 # # ARG-D
